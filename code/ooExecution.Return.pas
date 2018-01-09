@@ -82,7 +82,6 @@ type
     _StartTime, _FinishTime: TDateTime;
     _Value: T;
     _Error: Exception;
-    _IsSuccess: Boolean;
   public
     function StartTime: TDateTime;
     function FinishTime: TDateTime;

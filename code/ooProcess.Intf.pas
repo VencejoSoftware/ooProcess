@@ -21,10 +21,17 @@ type
 {$REGION 'documentation'}
 {
   @abstract(Interface to define a process)
+  @member(
+    RunID Return the process unique identifier when run/execute
+    @return(Process run identifier)
+  )
 }
 {$ENDREGION}
+  TProcessRunID = Cardinal;
+
   IProcess = interface(IRunnableNotify)
     ['{7248F091-B271-46C7-AA4C-044A08635FCB}']
+    function RunID: TProcessRunID;
   end;
 
 implementation
