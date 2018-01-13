@@ -53,7 +53,14 @@ implementation
 
 procedure TExecutionLogNotifier.StatusChanged(const Runnable: IRunnable; const Status: IExecutionStatus);
 begin
-  _LogActor.LogDebug(Runnable.Code + '>>' + Status.Text);
+  case Status.Code of
+    Running, Stopped:
+      _LogActor.LogInfo(Runnable.Description + ': ' + Status.Text);
+    Fail, Warning:
+      _LogActor.LogWarning(Runnable.Description + ': ' + Status.Text);
+  else
+    _LogActor.LogDebug(Runnable.Code + '>>' + Status.Text);
+  end;
 end;
 
 constructor TExecutionLogNotifier.Create(const Logger: ILogger);
