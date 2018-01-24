@@ -5,43 +5,37 @@
   The full license is distributed with this software
 }
 {
-  Object to protect process
+  Object to protect any work object collision
   @created(08/04/2016)
   @author Vencejo Software <www.vencejosoft.com>
 }
-unit ooProcess.Protect.Intf;
+unit ooWork.Protect.Intf;
 
 interface
 
 uses
   SysUtils,
-  ooProcess.Intf;
+  ooWork;
 
 type
 {$REGION 'documentation'}
-// @abstract(Exception class for process @link(IProcess protected))
-{$ENDREGION}
-  EProcessProtect = class(Exception)
-  end;
-{$REGION 'documentation'}
 {
-  @abstract(Object to protect process)
+  @abstract(Object to protect any work obejct)
   @member(
-    Protect Start the process protection
-    @param(Process Process to protect)
+    Protect Start the work protection
+    @param(Work Work object to protect)
     @returns(@true if protect success, @false if fail)
   )
   @member(
-    EndProtect End current process protection
+    EndProtecteion End current work object protection
     @returns(@True if protect finish ok, @false if not)
   )
 }
 {$ENDREGION}
-
-  IProcessProtect = interface
+  IWorkProtect = interface
     ['{6A82AA38-C008-405F-B573-2483BB3D822B}']
-    function Protect(const Process: IProcess): Boolean;
-    function EndProtect: Boolean;
+    function Protect(const Work: IWork): Boolean;
+    function EndProtecteion: Boolean;
   end;
 
 implementation

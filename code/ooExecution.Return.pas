@@ -15,7 +15,8 @@ unit ooExecution.Return;
 interface
 
 uses
-  SysUtils;
+  SysUtils,
+  ooExecution.Error;
 
 type
 {$REGION 'documentation'}
@@ -48,7 +49,7 @@ type
   )
   @member(
     Fail Sets error on executation not success
-    @param(Error Exception object)
+    @param(Error Error object)
   )
 }
 {$ENDREGION}
@@ -57,10 +58,10 @@ type
     function StartTime: TDateTime;
     function FinishTime: TDateTime;
     function Value: T;
-    function Error: Exception;
+    function Error: IExecutionError;
     function IsSuccess: Boolean;
     procedure Success(const Return: T);
-    procedure Fail(const Error: Exception);
+    procedure Fail(const Error: IExecutionError);
   end;
 {$REGION 'documentation'}
 {
@@ -81,17 +82,17 @@ type
   strict private
     _StartTime, _FinishTime: TDateTime;
     _Value: T;
-    _Error: Exception;
+    _Error: IExecutionError;
   public
     function StartTime: TDateTime;
     function FinishTime: TDateTime;
     function Value: T;
-    function Error: Exception;
+    function Error: IExecutionError;
     function IsSuccess: Boolean;
     procedure Success(const Return: T);
-    procedure Fail(const Error: Exception);
+    procedure Fail(const Error: IExecutionError);
     constructor Create;
-    destructor Destroy; override;
+// destructor Destroy; override;
     class function New: IExecutionReturn<T>;
   end;
 
@@ -107,7 +108,7 @@ begin
   Result := _FinishTime;
 end;
 
-function TExecutionReturn<T>.Error: Exception;
+function TExecutionReturn<T>.Error: IExecutionError;
 begin
   Result := _Error;
 end;
@@ -128,10 +129,10 @@ begin
   _Value := Return;
 end;
 
-procedure TExecutionReturn<T>.Fail(const Error: Exception);
+procedure TExecutionReturn<T>.Fail(const Error: IExecutionError);
 begin
   _FinishTime := Now;
-  _Error := Exception(AcquireExceptionObject);
+  _Error := Error; // Exception(AcquireExceptionObject);
 end;
 
 constructor TExecutionReturn<T>.Create;
@@ -139,15 +140,15 @@ begin
   _StartTime := Now;
 end;
 
-destructor TExecutionReturn<T>.Destroy;
-begin
-  if Assigned(_Error) then
-  begin
-    ReleaseExceptionObject;
-    _Error.Free;
-  end;
-  inherited;
-end;
+// destructor TExecutionReturn<T>.Destroy;
+// begin
+// if Assigned(_Error) then
+// begin
+// ReleaseExceptionObject;
+// _Error.Free;
+// end;
+// inherited;
+// end;
 
 class function TExecutionReturn<T>.New: IExecutionReturn<T>;
 begin

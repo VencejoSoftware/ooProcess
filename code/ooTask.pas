@@ -15,54 +15,37 @@ unit ooTask;
 interface
 
 uses
-  SysUtils,
   ooExecution.Status,
   ooExecution.Return,
   ooExecution.Notifier,
-  ooRunnable.Intf, ooRunnable.Notify.Intf;
+  ooExecution.Error,
+  ooWork, ooWork.Runnable;
 
 type
 {$REGION 'documentation'}
 {
-  @abstract(Interface to define a task)
+  @abstract(Interface to define a task object)
   @member(
-    LastReturn Execution last return
+    LastReturn Execution last return value
     @returns(@link(IExecutionReturn return with generic value))
   )
 }
 {$ENDREGION}
-  ITask<T> = interface(IRunnableNotify)
-    ['{D94EECFE-EB0C-43F3-9EBF-5DD4F61AA30D}']
+  ITask<T> = interface(IWorkRunnable)
+    ['{BE2CD566-D53C-47FA-AA9F-58494C239E1C}']
     function LastReturn: IExecutionReturn<T>;
   end;
 {$REGION 'documentation'}
 {
-  Class for task exceptions
-}
-{$ENDREGION}
-
-  ETask = class sealed(Exception)
-  end;
-{$REGION 'documentation'}
-{
   @abstract(Implementation of @link(ITask))
-  Parent class to save code lines
-  @member(Code @seealso(IRunnable.Code));
-  @member(Description @seealso(IRunnable.Description))
-  @member(Execute @seealso(IRunnable.Execute))
-  @member(Status @seealso(IRunnable.Status))
-  @member(ChangeNotifier @seealso(IRunnableNotify.ChangeNotifier))
+  @member(Code @seealso(IWork.Code))
+  @member(Description @seealso(IWork.Description))
+  @member(Status @seealso(IWorkRunnable.Status))
+  @member(Execute @seealso(IWorkRunnable.Execute))
+  @member(ExecuteChildWork @seealso(IWorkRunnable.ExecuteChildWork))
+  @member(ChangeStatus @seealso(IWorkRunnable.ChangeStatus))
+  @member(ChangeNotifier @seealso(IWorkRunnable.ChangeNotifier))
   @member(LastReturn @seealso(ITask.LastReturn))
-  @member(
-    RunTask Execute a runnable object
-    @param(Task Runnable object to execute)
-    @return(@true is success, @false is fail)
-  )
-  @member(
-    RunTaskRaisingError Execute a runnable object. If exception is generated then raise
-    @param(Task Runnable object to execute)
-    @return(@true is success, @false is fail)
-  )
   @member(
     NewSuccessReturn Build a new successed execution return
     @param(Value Generic value)
@@ -74,47 +57,35 @@ type
     @return(Execution return object)
   )
   @member(
-    ChangeStatus Change the current execution status
-    @param(Status New execution status)
-  )
-  @member(
-    NewExecutionValue Must be implemented in inheritence
+    NewExecutionValue Must be implemented in inheritence class
     @return(Must return a generic value)
   )
   @member(
-    NotifyStatusChanged Send notify to the event callback
-    @param(Runnable Sender of notification)
-    @param(Status Current execution status)
-  )
-  @member(
     Create Object constructor
-    @param(Code Code to identify this task)
+    @param(Code Code to identify the task)
     @param(Description Task description)
   )
 }
 {$ENDREGION}
 
-  TTask<T> = class(TInterfacedObject, ITask<T>, IRunnableNotify, IRunnable)
+  TTask<T> = class(TInterfacedObject, ITask<T>)
   strict private
-    _Code: String;
-    _Description: String;
-    _Status: IExecutionStatus;
+    _Work: IWorkRunnable;
     _LastReturn: IExecutionReturn<T>;
-    _Notifier: IExecutionNotifier;
     function NewSuccessReturn(const Value: T): IExecutionReturn<T>;
-    function NewFailReturn(const Error: Exception): IExecutionReturn<T>;
-    procedure ChangeStatus(const Status: IExecutionStatus);
+    function NewFailReturn(const Error: IExecutionError): IExecutionReturn<T>;
+    function ExecuteCallback: Boolean;
+    procedure ExecuteFailback(const Error: IExecutionError);
   protected
     function NewExecutionValue: T; virtual; abstract;
-    procedure NotifyStatusChanged(const Runnable: IRunnable; const Status: IExecutionStatus);
   public
     function Code: String;
     function Description: String;
-    function Execute: Boolean;
+    function Execute(const RaiseOnFail: Boolean = False): Boolean;
     function LastReturn: IExecutionReturn<T>;
     function Status: IExecutionStatus;
-    function RunTask(const Task: IRunnableNotify): Boolean;
-    function RunTaskRaisingError<TTask>(const Task: ITask<TTask>): Boolean;
+    function ExecuteChildWork(const Task: IWorkRunnable; const RaiseOnFail: Boolean = False): Boolean;
+    procedure ChangeStatus(const Status: IExecutionStatus);
     procedure ChangeNotifier(const Notifier: IExecutionNotifier);
     constructor Create(const Code, Description: String);
   end;
@@ -123,78 +94,44 @@ implementation
 
 function TTask<T>.Code: String;
 begin
-  Result := _Code;
+  Result := _Work.Code;
 end;
 
 function TTask<T>.Description: String;
 begin
-  Result := _Description;
+  Result := _Work.Description;
 end;
 
 function TTask<T>.Status: IExecutionStatus;
 begin
-  Result := _Status;
+  Result := _Work.Status;
 end;
 
 procedure TTask<T>.ChangeStatus(const Status: IExecutionStatus);
 begin
-  _Status := Status;
-  NotifyStatusChanged(Self, Status);
+  _Work.ChangeStatus(Status);
 end;
 
-procedure TTask<T>.NotifyStatusChanged(const Runnable: IRunnable; const Status: IExecutionStatus);
+procedure TTask<T>.ChangeNotifier(const Notifier: IExecutionNotifier);
 begin
-  if Assigned(_Notifier) then
-    _Notifier.StatusChanged(Runnable, Status);
+  _Work.ChangeNotifier(Notifier);
 end;
 
-function TTask<T>.RunTask(const Task: IRunnableNotify): Boolean;
+function TTask<T>.ExecuteChildWork(const Task: IWorkRunnable; const RaiseOnFail: Boolean = False): Boolean;
 begin
-  Task.ChangeNotifier(_Notifier);
-  Result := Task.Execute;
+  Result := _Work.ExecuteChildWork(Task, RaiseOnFail);
 end;
 
-function TTask<T>.RunTaskRaisingError<TTask>(const Task: ITask<TTask>): Boolean;
-begin
-  Result := RunTask(Task);
-  if not Task.LastReturn.IsSuccess then
-    raise ETask.Create(Task.LastReturn.Error.Message);
-end;
-
-function TTask<T>.NewFailReturn(const Error: Exception): IExecutionReturn<T>;
+function TTask<T>.NewFailReturn(const Error: IExecutionError): IExecutionReturn<T>;
 begin
   Result := TExecutionReturn<T>.New;
   Result.Fail(Error);
-  ChangeStatus(TExecutionStatus.New(Fail, 'Failed=[' + Error.Message + ']'));
 end;
 
 function TTask<T>.NewSuccessReturn(const Value: T): IExecutionReturn<T>;
 begin
   Result := TExecutionReturn<T>.New;
   Result.Success(Value);
-  ChangeStatus(TExecutionStatus.New(Success, 'Successed'));
-end;
-
-procedure TTask<T>.ChangeNotifier(const Notifier: IExecutionNotifier);
-begin
-  _Notifier := Notifier;
-end;
-
-function TTask<T>.Execute: Boolean;
-var
-  Value: T;
-begin
-  Result := False;
-  ChangeStatus(TExecutionStatus.New(Running, 'Started'));
-  try
-    Value := NewExecutionValue;
-    _LastReturn := NewSuccessReturn(Value);
-    Result := True;
-  except
-    on E: Exception do
-      _LastReturn := NewFailReturn(E);
-  end;
-  ChangeStatus(TExecutionStatus.New(Stopped, 'Stopped'));
 end;
 
 function TTask<T>.LastReturn: IExecutionReturn<T>;
@@ -202,11 +139,28 @@ begin
   Result := _LastReturn;
 end;
 
+function TTask<T>.ExecuteCallback: Boolean;
+var
+  Value: T;
+begin
+  Value := NewExecutionValue;
+  _LastReturn := NewSuccessReturn(Value);
+  Result := True;
+end;
+
+procedure TTask<T>.ExecuteFailback(const Error: IExecutionError);
+begin
+  _LastReturn := NewFailReturn(Error);
+end;
+
+function TTask<T>.Execute(const RaiseOnFail: Boolean = False): Boolean;
+begin
+  Result := _Work.Execute(RaiseOnFail);
+end;
+
 constructor TTask<T>.Create(const Code, Description: String);
 begin
-  _Code := Code;
-  _Description := Description;
-  ChangeStatus(TExecutionStatus.New(Stopped, 'Idle'));
+  _Work := TWorkRunnable.New(TWork.New(Code, Description), ExecuteCallback, ExecuteFailback);
 end;
 
 end.

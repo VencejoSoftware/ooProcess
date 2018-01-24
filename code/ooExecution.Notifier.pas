@@ -16,7 +16,7 @@ interface
 
 uses
   ooExecution.Status,
-  ooRunnable.Intf;
+  ooWork;
 
 type
 {$REGION 'documentation'}
@@ -24,14 +24,14 @@ type
   @abstract(Object to define a execution notifier)
   @member(
     StatusChanged Notify changes in status
-    @param(Runnable Sender of notification)
+    @param(Work Work object which notificate)
     @param(Status Current execution status)
   )
 }
 {$ENDREGION}
   IExecutionNotifier = interface
     ['{38E8F295-7F84-4881-8855-02D81B3E9047}']
-    procedure StatusChanged(const Runnable: IRunnable; const Status: IExecutionStatus);
+    procedure StatusChanged(const Work: IWork; const Status: IExecutionStatus);
   end;
 
 implementation

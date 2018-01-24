@@ -17,8 +17,8 @@ interface
 uses
   ooLogger.Intf, ooLog.Actor,
   ooExecution.Status,
-  ooRunnable.Intf,
-  ooExecution.Notifier;
+  ooExecution.Notifier,
+  ooWork;
 
 type
 {$REGION 'documentation'}
@@ -44,22 +44,22 @@ type
   strict private
     _LogActor: ILogActor;
   public
-    procedure StatusChanged(const Runnable: IRunnable; const Status: IExecutionStatus);
+    procedure StatusChanged(const Work: IWork; const Status: IExecutionStatus);
     constructor Create(const Logger: ILogger);
     class function New(const Logger: ILogger): IExecutionNotifier;
   end;
 
 implementation
 
-procedure TExecutionLogNotifier.StatusChanged(const Runnable: IRunnable; const Status: IExecutionStatus);
+procedure TExecutionLogNotifier.StatusChanged(const Work: IWork; const Status: IExecutionStatus);
 begin
   case Status.Code of
     Running, Stopped:
-      _LogActor.LogInfo(Runnable.Description + ': ' + Status.Text);
+      _LogActor.LogInfo(Work.Description + ': ' + Status.Text);
     Fail, Warning:
-      _LogActor.LogWarning(Runnable.Description + ': ' + Status.Text);
+      _LogActor.LogWarning(Work.Code + '>>' + Work.Description + ': ' + Status.Text);
   else
-    _LogActor.LogDebug(Runnable.Code + '>>' + Status.Text);
+    _LogActor.LogDebug(Work.Code + '>>' + Status.Text);
   end;
 end;
 
