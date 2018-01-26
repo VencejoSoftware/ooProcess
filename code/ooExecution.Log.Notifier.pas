@@ -15,6 +15,7 @@ unit ooExecution.Log.Notifier;
 interface
 
 uses
+  SysUtils,
   ooLogger.Intf, ooLog.Actor,
   ooExecution.Status,
   ooExecution.Notifier,
@@ -53,13 +54,12 @@ implementation
 
 procedure TExecutionLogNotifier.StatusChanged(const Work: IWork; const Status: IExecutionStatus);
 begin
+  _LogActor.LogDebug(Work.Code + '>>' + Status.Text);
   case Status.Code of
-    Running, Stopped:
+    Running, Stopped, Notifying:
       _LogActor.LogInfo(Work.Description + ': ' + Status.Text);
     Fail, Warning:
       _LogActor.LogWarning(Work.Code + '>>' + Work.Description + ': ' + Status.Text);
-  else
-    _LogActor.LogDebug(Work.Code + '>>' + Status.Text);
   end;
 end;
 

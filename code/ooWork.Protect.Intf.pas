@@ -27,7 +27,7 @@ type
     @returns(@true if protect success, @false if fail)
   )
   @member(
-    EndProtecteion End current work object protection
+    EndProtection End current work object protection
     @returns(@True if protect finish ok, @false if not)
   )
 }
@@ -35,7 +35,7 @@ type
   IWorkProtect = interface
     ['{6A82AA38-C008-405F-B573-2483BB3D822B}']
     function Protect(const Work: IWork): Boolean;
-    function EndProtecteion: Boolean;
+    function EndProtection: Boolean;
   end;
 
 implementation
