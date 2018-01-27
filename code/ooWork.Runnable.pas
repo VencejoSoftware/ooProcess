@@ -181,9 +181,15 @@ begin
     begin
       if Assigned(_Failback) then
         _Failback(TExecutionError.New(Self, E.Message));
-      ChangeStatus(TExecutionStatus.New(Fail, 'Failed=[' + E.Message + ']'));
       if RaiseOnFail then
+      begin
+        ChangeStatus(TExecutionStatus.New(Notifying, 'Failed=[' + E.Message + ']'));
         raise ;
+      end
+      else
+      begin
+        ChangeStatus(TExecutionStatus.New(Fail, 'Failed=[' + E.Message + ']'));
+      end;
     end;
   end;
   ChangeStatus(TExecutionStatus.New(Stopped, 'Stopped'));

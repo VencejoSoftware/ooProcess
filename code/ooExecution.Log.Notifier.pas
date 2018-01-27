@@ -56,10 +56,12 @@ procedure TExecutionLogNotifier.StatusChanged(const Work: IWork; const Status: I
 begin
   _LogActor.LogDebug(Work.Code + '>>' + Status.Text);
   case Status.Code of
-    Running, Stopped, Notifying:
+    Running, Stopped:
       _LogActor.LogInfo(Work.Description + ': ' + Status.Text);
-    Fail, Warning:
-      _LogActor.LogWarning(Work.Code + '>>' + Work.Description + ': ' + Status.Text);
+    Fail:
+      _LogActor.LogErrorText(Work.Code + '>>' + Work.Description + ': ' + Status.Text);
+    Warning:
+      _LogActor.LogWarning(Work.Description + ': ' + Status.Text);
   end;
 end;
 
